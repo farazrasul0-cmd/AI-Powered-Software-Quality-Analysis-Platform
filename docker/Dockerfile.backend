@@ -1,0 +1,43 @@
+FROM python:3.12-slim AS builder
+
+WORKDIR /app
+
+# Install system dependencies for git, tree-sitter C bindings, and build tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.12-slim AS runner
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed python dependencies from builder
+COPY --from=builder /root/.local /root/.local
+ENV PATH=/root/.local/bin:$PATH
+
+# Non-root user for security
+RUN groupadd -g 10001 appuser && useradd -u 10001 -g appuser -s /bin/bash appuser \
+    && mkdir -p /app/temp_repos \
+    && chown -R appuser:appuser /app
+
+COPY backend /app
+COPY ml_engine /app/ml_engine
+RUN chown -R appuser:appuser /app
+
+ENV PYTHONPATH=/app:$PYTHONPATH
+
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

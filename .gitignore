@@ -1,0 +1,79 @@
+# ==============================================================================
+# AI-Powered Software Quality Analysis Platform .gitignore
+# ==============================================================================
+
+# Byte-compiled / optimized / virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+backend/.venv/
+env/
+venv/
+ENV/
+
+# Environment Variables & Secrets
+.env
+*.env
+!*.env.example
+*.env.local
+*.pem
+*.key
+
+# Frontend build & dependencies
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+frontend/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test & coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+backend/.mypy_cache/
+.ruff_cache/
+backend/.ruff_cache/
+
+# Databases, vectors, persistent data & scratch
+*.sqlite3
+*.db
+quality_platform.db
+standalone_dev.db
+qdrant_storage/
+qdrant_data/
+postgres_data/
+redis_data/
+temp_repos/
+storage/
+*.log
+
+# OS specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Internal Agent & Governance Meta-Files (Excluded from public repo)
+AI_Software_Quality_Platform_Antigravity_MD_Files/
+ANTIGRAVITY_START_PROMPT.md
+AI_AGENT_INSTRUCTIONS.md
+AGENT_ORCHESTRATION.md
+DEVELOPMENT_WORKFLOW.md
+DEVELOPMENT_RULES.md
+ENGINEERING_DECISION_RULES.md
+PROJECT_PHASE_RULES.md
+MVP_SCOPE.md
