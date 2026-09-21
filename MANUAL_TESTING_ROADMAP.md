@@ -1,11 +1,11 @@
 # End-to-End Manual Testing Roadmap & Production Validation Guide
-*AI-Powered Software Quality Analysis Platform*
+*CodeSentinel AI — Software Quality & Architecture Analysis Platform*
 
 ---
 
 | Document Attribute | Specification |
 | :--- | :--- |
-| **Document Title** | End-to-End Manual Testing Roadmap & Production Validation Guide |
+| **Document Title** | CodeSentinel AI End-to-End Manual Testing Roadmap & Production Validation Guide |
 | **System Version** | `v1.0.0-release` |
 | **Testing Purpose** | Comprehensive Phase-by-Phase Black-Box & Grey-Box Production Validation |
 | **Target Audience** | Manual QA Testers, SREs, Product Evaluators, Research Reviewers |

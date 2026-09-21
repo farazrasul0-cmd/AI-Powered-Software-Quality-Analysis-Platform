@@ -1,5 +1,5 @@
 # System Architecture & Technical Specifications
-*AI-Powered Software Quality Analysis Platform*
+*CodeSentinel AI — Software Quality & Architecture Analysis Platform*
 
 ---
 

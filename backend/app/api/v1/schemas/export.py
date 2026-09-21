@@ -42,9 +42,9 @@ class SarifReportingDescriptor(BaseModel):
 
 
 class SarifToolComponent(BaseModel):
-    name: str = "AI-Powered Software Quality Analysis Platform"
+    name: str = "CodeSentinel AI"
     version: str = "1.0.0"
-    informationUri: str = "https://github.com/AI-Powered-Software-Quality-Analysis-Platform"
+    informationUri: str = "https://github.com/farazrasul0-cmd/CodeSentinel"
     rules: list[SarifReportingDescriptor] = Field(default_factory=list)
 
 

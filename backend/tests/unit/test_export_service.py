@@ -82,7 +82,7 @@ def test_sarif_export_schema_and_results():
     assert len(sarif.runs) == 1
 
     run = sarif.runs[0]
-    assert run.tool.driver.name == "AI-Powered Software Quality Analysis Platform"
+    assert run.tool.driver.name == "CodeSentinel AI"
     assert len(run.tool.driver.rules) >= 2
 
     # 2. Results mapping

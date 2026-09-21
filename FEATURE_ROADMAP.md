@@ -1,5 +1,5 @@
 # Public Feature Roadmap & Milestones
-*AI-Powered Software Quality Analysis Platform*
+*CodeSentinel AI — Software Quality & Architecture Analysis Platform*
 
 ---
 

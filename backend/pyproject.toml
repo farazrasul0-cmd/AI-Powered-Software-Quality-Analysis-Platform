@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "quality-platform-backend"
+name = "codesentinel-backend"
 version = "0.1.0"
-description = "AI-Powered Software Quality Analysis Platform Backend"
+description = "CodeSentinel AI - Code Quality & Architecture Analysis Platform"
 requires-python = ">=3.11"
 readme = "README.md"
 

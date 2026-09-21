@@ -173,7 +173,7 @@ class ExportService:
 
         tool = SarifTool(
             driver=SarifToolComponent(
-                name="AI-Powered Software Quality Analysis Platform",
+                name="CodeSentinel AI",
                 version="1.0.0",
                 rules=list(rules_map.values()),
             )
@@ -239,7 +239,7 @@ class ExportService:
         lines.extend([
             "",
             "---",
-            "*Report generated automatically by [AI-Powered Software Quality Analysis Platform](https://github.com/AI-Powered-Software-Quality-Analysis-Platform).* "
+            "*Report generated automatically by [CodeSentinel AI](https://github.com/farazrasul0-cmd/CodeSentinel).* "
             "Ingest SARIF log for detailed GitHub Code Scanning annotations.",
         ])
 
