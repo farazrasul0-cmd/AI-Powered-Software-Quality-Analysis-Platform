@@ -1,9 +1,12 @@
 """Analysis Job triggering and status endpoints."""
 
+import socket
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas.analysis import AnalysisJobResponse, AnalysisTriggerRequest
+from app.core.config import settings
 from app.core.logging import logger
 from app.domain.enums import JobStatus
 from app.infrastructure.db.models.analysis_job import AnalysisJob
@@ -15,13 +18,24 @@ from app.services.ingestion_service import IngestionService
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
 
 
+def _is_redis_available() -> bool:
+    """Fast non-blocking socket check for Redis presence."""
+    try:
+        with socket.create_connection((settings.REDIS_HOST, settings.REDIS_PORT), timeout=0.2):
+            return True
+    except OSError:
+        return False
+
+
 async def _run_pipeline_background(job_id: str):
-    async with async_session_factory() as session:
-        service = IngestionService(session)
-        try:
+    logger.info(f"Starting background pipeline execution for job {job_id}...")
+    try:
+        async with async_session_factory() as session:
+            service = IngestionService(session)
             await service.run_pipeline(job_id)
-        except Exception as e:
-            logger.error(f"Background pipeline execution failed for job {job_id}: {e}")
+            logger.info(f"Completed background pipeline execution for job {job_id} successfully.")
+    except Exception as e:
+        logger.exception(f"Background pipeline execution failed for job {job_id}: {e}")
 
 
 @router.post("/trigger", response_model=AnalysisJobResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -50,19 +64,24 @@ async def trigger_analysis(
     job = await job_repo.create(job)
     await session.commit()
 
-    # Try Celery dispatch, fallback gracefully to FastAPI background tasks
+    # Fast check: If Redis is online, dispatch via Celery. Otherwise, immediately use BackgroundTasks.
     dispatched = False
-    try:
-        from app.workers.celery_app import analyze_repository_task
+    if _is_redis_available():
+        try:
+            from app.workers.celery_app import analyze_repository_task
 
-        analyze_repository_task.apply_async(args=[job.id], queue="cpu_heavy")
-        dispatched = True
-        logger.info(f"Dispatched job {job.id} to Celery queue")
-    except Exception as e:
-        logger.warning(f"Celery unavailable ({e}), using async BackgroundTasks fallback")
+            analyze_repository_task.apply_async(args=[job.id], queue="cpu_heavy")
+            dispatched = True
+            logger.info(f"Dispatched job {job.id} to Celery queue")
+        except Exception as e:
+            logger.warning(f"Celery unavailable ({e}), using async BackgroundTasks fallback")
+    else:
+        logger.info("Redis broker offline. Instantly falling back to async BackgroundTasks.")
 
     if not dispatched:
-        background_tasks.add_task(_run_pipeline_background, job.id)
+        import asyncio
+
+        asyncio.create_task(_run_pipeline_background(job.id))
 
     return job
 

@@ -197,3 +197,43 @@ export interface ScorecardTrendResponse {
   delta_since_previous: number;
 }
 
+export interface BenchmarkExperimentRQ1 {
+  description: string;
+  hybrid_precision: number;
+  hybrid_recall: number;
+  hybrid_f1_score: number;
+  static_baseline_precision: number;
+  static_baseline_recall: number;
+  static_baseline_f1_score: number;
+  f1_gain_percentage: number;
+}
+
+export interface BenchmarkExperimentRQ2 {
+  description: string;
+  total_files: number;
+  total_loc: number;
+  recall_at_top_20_percent_loc: number;
+  random_baseline_recall: number;
+  cost_effectiveness_multiplier: number;
+}
+
+export interface BenchmarkExperimentRQ3 {
+  description: string;
+  benign_test_fixture_alerts_total: number;
+  false_positives_suppressed_count: number;
+  false_positive_suppression_rate: number;
+  critical_security_vulnerabilities_total: number;
+  critical_vulnerabilities_retained_count: number;
+  critical_vulnerability_retention_rate: number;
+}
+
+export interface BenchmarkSuiteResult {
+  evaluation_timestamp: string;
+  corpus_size: number;
+  total_loc_evaluated: number;
+  rq1_triangulation_accuracy: BenchmarkExperimentRQ1;
+  rq2_effort_aware_ranking: BenchmarkExperimentRQ2;
+  rq3_false_positive_suppression: BenchmarkExperimentRQ3;
+  conclusion: string;
+}
+

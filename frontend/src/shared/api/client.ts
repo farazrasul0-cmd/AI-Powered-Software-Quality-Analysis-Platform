@@ -22,6 +22,28 @@ export const api = {
     return res.json();
   },
 
+  async onboardRepository(url: string, name?: string, default_branch = "main"): Promise<Repository> {
+    const res = await fetch(`${BASE_URL}/repositories/onboard`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, name, default_branch }),
+    });
+    if (!res.ok) {
+      // Fallback to /repositories
+      const fallbackRes = await fetch(`${BASE_URL}/repositories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, name, default_branch }),
+      });
+      if (!fallbackRes.ok) {
+        const error = await fallbackRes.json();
+        throw new Error(error.detail || "Failed to onboard repository");
+      }
+      return fallbackRes.json();
+    }
+    return res.json();
+  },
+
   async triggerAnalysis(repositoryId: string, branch = "main"): Promise<AnalysisJob> {
     const res = await fetch(`${BASE_URL}/analysis/trigger`, {
       method: "POST",
@@ -44,6 +66,12 @@ export const api = {
     return res.json();
   },
 
+  async getReport(reportId: string): Promise<AnalysisReport> {
+    const res = await fetch(`${BASE_URL}/reports/${reportId}`);
+    if (!res.ok) throw new Error("Failed to fetch report");
+    return res.json();
+  },
+
   async updateReviewStatus(commentId: string, status: string): Promise<any> {
     const res = await fetch(`${BASE_URL}/reviews/${commentId}/status`, {
       method: "PATCH",
@@ -51,6 +79,18 @@ export const api = {
       body: JSON.stringify({ status }),
     });
     if (!res.ok) throw new Error("Failed to update review status");
+    return res.json();
+  },
+
+  async runBenchmarkExperiments(): Promise<any> {
+    const res = await fetch(`${BASE_URL}/benchmarks/experiments`);
+    if (!res.ok) throw new Error("Failed to run benchmark experiments");
+    return res.json();
+  },
+
+  async getBenchmarkCorpus(): Promise<any[]> {
+    const res = await fetch(`${BASE_URL}/benchmarks/corpus`);
+    if (!res.ok) throw new Error("Failed to fetch benchmark corpus");
     return res.json();
   },
 };

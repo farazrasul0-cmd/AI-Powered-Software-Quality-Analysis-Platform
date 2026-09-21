@@ -13,6 +13,7 @@ router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
 
 @router.post("", response_model=RepositoryResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/onboard", response_model=RepositoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_repository(
     payload: RepositoryCreate,
     session: AsyncSession = Depends(get_db_session),

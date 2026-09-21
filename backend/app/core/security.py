@@ -3,7 +3,10 @@
 import ipaddress
 import re
 import socket
+from pathlib import Path
 from urllib.parse import urlparse
+
+from app.core.config import settings
 
 ALLOWED_SCHEMES = {"http", "https", "git", "ssh"}
 
@@ -25,6 +28,18 @@ def is_safe_repository_url(url: str) -> tuple[bool, str]:
         return False, "URL must be a non-empty string"
 
     url = url.strip()
+
+    # Allow local directories in development/testing mode for standalone execution
+    if (settings.APP_ENV in {"development", "testing"} or settings.DEBUG) and (
+        url.startswith("file://") or (len(url) > 2 and Path(url).exists())
+    ):
+        raw_path = url[7:] if url.startswith("file://") else url
+        try:
+            local_path = Path(raw_path).expanduser().resolve()
+            if local_path.exists() and local_path.is_dir():
+                return True, "Safe local development directory"
+        except Exception:
+            pass
 
     # Regex check for typical git/https URLs
     if not (url.startswith("https://") or url.startswith("http://") or url.startswith("git@")):

@@ -5,6 +5,8 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas.export import SarifLog
+from app.infrastructure.db.models.analysis_job import AnalysisJob
+from app.infrastructure.db.models.repository import Repository
 from app.infrastructure.db.session import get_db_session
 from app.repositories.report_repo import ReportRepo
 from app.services.export_service import ExportService
@@ -59,8 +61,12 @@ async def export_report_markdown(
     )
 
     repo_name = "Repository"
-    if report.job and report.job.repository:
-        repo_name = report.job.repository.name
+    if report.job_id:
+        job = await session.get(AnalysisJob, report.job_id)
+        if job and job.repository_id:
+            repo_obj = await session.get(Repository, job.repository_id)
+            if repo_obj:
+                repo_name = repo_obj.name
 
     content = ExportService.generate_markdown_summary(report, scorecard, repo_name=repo_name)
     return PlainTextResponse(content=content, media_type="text/markdown")
@@ -88,8 +94,12 @@ async def export_report_html(
     )
 
     repo_name = "Repository"
-    if report.job and report.job.repository:
-        repo_name = report.job.repository.name
+    if report.job_id:
+        job = await session.get(AnalysisJob, report.job_id)
+        if job and job.repository_id:
+            repo_obj = await session.get(Repository, job.repository_id)
+            if repo_obj:
+                repo_name = repo_obj.name
 
     html_content = ExportService.generate_printable_html(report, scorecard, repo_name=repo_name)
     return HTMLResponse(content=html_content)

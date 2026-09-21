@@ -7,10 +7,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Ensure project root is in sys.path for ml_engine imports
-PROJECT_ROOT = str(Path(__file__).resolve().parents[3])
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Ensure project root or app root is in sys.path for ml_engine imports
+for p in Path(__file__).resolve().parents:
+    if (p / "ml_engine").exists() and str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+        break
 
 from ml_engine.models.defect_predictor import DefectPredictor  # noqa: E402
 from ml_engine.models.shap_explainer import DefectShapExplainer  # noqa: E402
