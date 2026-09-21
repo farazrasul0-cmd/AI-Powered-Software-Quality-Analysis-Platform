@@ -1,202 +1,98 @@
 <div align="center">
 
-# 🛡️ CodeSentinel AI
-### *Autonomous Multi-Pillar Software Quality Governance, ML Defect Prediction & Hybrid AI Review Platform*
+# CodeSentinel
 
-[![Build & Test Status](https://img.shields.io/badge/Tests-61%2F61%20Passed-emerald.svg?style=for-the-badge&logo=pytest)](https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform)
-[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![React 18](https://img.shields.io/badge/React-18-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
-[![TypeScript 5](https://img.shields.io/badge/TypeScript-5.2-3178C6.svg?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Vite](https://img.shields.io/badge/Vite-5.4-646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
-[![Docker](https://img.shields.io/badge/Docker-Compose%20v2-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
-[![SARIF v2.1.0](https://img.shields.io/badge/OASIS_SARIF-v2.1.0_Compliant-orange.svg?style=for-the-badge&logo=oasis)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+**A modern code quality and security analysis platform combining static AST checks, ML defect risk prediction, and PR review.**
+
+[![Tests](https://img.shields.io/badge/tests-61%20passed-2ea44f?style=flat-square)](https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform)
+[![Python](https://img.shields.io/badge/python-3.12-387baf?style=flat-square)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/react-18-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/typescript-5.2-3178c6?style=flat-square)](https://www.typescriptlang.org)
+[![SARIF](https://img.shields.io/badge/SARIF-v2.1.0-orange?style=flat-square)](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
 <br/>
 
-**[Live Dashboard](http://localhost:5173)** &bull; **[API Docs (/docs)](http://localhost:8000/docs)** &bull; **[Research Benchmarks](#4-empirical-academic-benchmarks-rq1--rq3)** &bull; **[Architecture Guide](ARCHITECTURE.md)** &bull; **[Testing Roadmap](MANUAL_TESTING_ROADMAP.md)**
+[Overview](#overview) • [Features](#key-features) • [Quickstart](#quickstart) • [Architecture](#architecture) • [Scoring Model](#how-scoring-works) • [Benchmarks](#benchmarks--evaluation) • [API Usage](#api-usage)
 
 </div>
 
 ---
 
-## 1. Executive Summary & Core Innovations
+## Overview
 
-Modern software engineering teams commit thousands of lines of code daily, creating massive bottlenecks in manual pull request reviews. Traditional static analysis tools suffer from high false-positive alert fatigue, while pure Large Language Models (LLMs) hallucinate syntactic structures and lack whole-project architectural context.
+Static analysis tools often flood engineering teams with hundreds of low-priority warnings, while pure LLM reviewers can miss project-wide context or hallucinate syntax.
 
-**CodeSentinel AI** bridges this gap by unifying deterministic static AST analysis, calibrated machine learning defect prediction, and hybrid semantic code review into a single, mathematically grounded **Repository Quality Index ($\text{RQI} \in [0, 100]$)**.
+**CodeSentinel** takes a pragmatic, hybrid approach:
 
-```mermaid
-graph LR
-    subgraph Ingestion["1. Sandbox Ingestion"]
-        A[Git Clone / Local Fixtures] --> B[Polyglot AST Parser]
-        B --> C[Symbol Dependency Graph]
-    end
+1. **Static AST Analysis**: Deterministic checks for common security vulnerabilities (SQL injection, command execution, hardcoded secrets) and maintainability metrics (McCabe cyclomatic complexity, Halstead volume).
+2. **Defect Risk Scoring**: A machine learning model (Random Forest + TreeSHAP) that predicts which files are most likely to introduce defects, helping teams prioritize review effort on high-risk code first.
+3. **Context-Aware Filtering**: Differentiates production code from test fixtures, unit mocks, and dummy keys to significantly reduce alert fatigue.
+4. **Unified Scorecard**: Summarizes repository health into a 0–100 **Repository Quality Index (RQI)** across Security, Maintainability, Architecture, and Test Coverage.
 
-    subgraph MultiEngine["2. Multi-Engine Triangulation"]
-        C --> D["Static AST Scanner<br/>(CWE-89, 78, 502, 798, 327)"]
-        C --> E["TreeSHAP Defect Engine<br/>(Random Forest &phi;i Attribution)"]
-        C --> F["Syntactic Semantic Chunker<br/>(Dual-Mode Vector Store)"]
-    end
+---
 
-    subgraph Governance["3. Governance & Delivery"]
-        D & E & F --> G["4-Pillar RQI Scorecard<br/>(Maintainability, Security, Arch, Tests)"]
-        G --> H["OASIS SARIF v2.1.0 Log"]
-        G --> I["Interactive 5-Axis Radar Dashboard"]
-        G --> J["GitHub Pull Request Bot"]
-    end
+## Key Features
 
-    style Ingestion fill:#111827,stroke:#374151,stroke-width:1px,color:#fff
-    style MultiEngine fill:#1e1b4b,stroke:#6366f1,stroke-width:1px,color:#fff
-    style Governance fill:#064e3b,stroke:#10b981,stroke-width:1px,color:#fff
+- **AST Security Scanning**: Catches critical flaws including SQL injection (`CWE-89`), OS command execution (`CWE-78`), unsafe deserialization (`CWE-502`), hardcoded credentials (`CWE-798`), and broken cryptography (`CWE-327`).
+- **Defect Prediction with Explainability**: Calculates defect likelihood per module using software engineering metrics. TreeSHAP explains exactly *which* metrics (complexity, line count, operators) drove the risk score.
+- **Noise Reduction**: Automatically identifies test suites, mock credentials, and fixture files so benign test code doesn't penalize your security score.
+- **Circular Dependency Detection**: Analyzes module import graphs using Tarjan's Strongly Connected Components (SCC) algorithm to flag tight architectural coupling and import loops.
+- **GitHub & CI/CD Ready**: Exports standard **OASIS SARIF v2.1.0** reports for direct ingestion into GitHub Advanced Security code scanning, plus PR-ready Markdown summaries and printable HTML reports.
+- **Zero-Dependency Local Mode**: Runs out of the box with SQLite (WAL mode) and local in-memory embeddings—no Docker or cloud accounts required. Or scale up with the included multi-container Docker Compose stack.
+
+---
+
+## Quickstart
+
+### Option 1: Docker Compose (Full Stack)
+
+Clone the repository and spin up all services:
+
+```bash
+git clone https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform.git
+cd AI-Powered-Software-Quality-Analysis-Platform
+
+docker compose up -d --build
+```
+
+Services will be available at:
+- **Web Dashboard**: [http://localhost:5173](http://localhost:5173)
+- **FastAPI Backend & Interactive Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Qdrant Vector DB**: `localhost:6333`
+
+To stop:
+```bash
+docker compose down
 ```
 
 ---
 
-## 2. Competitive Capabilities Matrix
+### Option 2: Local Development (Standalone)
 
-| Architectural Capability | CodeSentinel AI | Traditional Linters (SonarQube/Bandit) | Standalone LLM Bots (Copilot/ChatGPT) |
-| :--- | :---: | :---: | :---: |
-| **AST Security Vulnerability Detection** | ✅ **Deterministic** (CWE-89, 78, 502, 798, 327) | ✅ Deterministic rules | ❌ Prone to hallucinations |
-| **Defect Probability Forecasting** | ✅ **TreeSHAP $\phi_i$ Explainability** | ❌ None | ❌ Non-deterministic |
-| **Effort-Aware Review Concentration** | ✅ **80% defects in top 20% LOC** | ❌ Flat severity sorting | ❌ No line-effort ranking |
-| **False-Positive Noise Suppression** | ✅ **100% on benign fixtures** | ❌ High alert fatigue | ⚠️ Inconsistent context |
-| **Circular Import / Coupling Detection** | ✅ **Tarjan's SCC Algorithm** | ⚠️ Partial / Rule-based | ❌ Unaware of global graph |
-| **Standard Output Formats** | ✅ **OASIS SARIF v2.1.0, PR Markdown, HTML** | ⚠️ Tool-specific formats | ⚠️ Plain unstructured text |
-| **Runtime Topology** | ✅ **Dual-Mode** (Zero-dep Standalone or Docker) | ❌ Heavy JVM/Server stack | ❌ Cloud-only API dependency |
+You can run CodeSentinel locally using SQLite and in-memory search without running PostgreSQL or Redis.
 
----
-
-## 3. High-Level System Architecture
-
-CodeSentinel AI is built on a clean, layered architecture separating core domains, orchestration workers, and presentation dashboards:
-
-```mermaid
-flowchart TD
-    subgraph ClientLayer["Frontend Presentation Layer"]
-        UI["React 18 + TypeScript + Vite Dashboard"]
-        Radar["5-Axis Radar Scorecard (Recharts)"]
-        Review["Diff-Aware Code Review Viewer"]
-        Exp["Academic Benchmarks Viewer (RQ1–RQ3)"]
-        UI --> Radar & Review & Exp
-    end
-
-    subgraph GatewayLayer["FastAPI Gateway & Orchestrator"]
-        API["REST Gateway (/api/v1)"]
-        SSE["Server-Sent Events (SSE) Stream"]
-        Auth["HMAC SHA-256 Webhook Security"]
-        Export["SARIF v2.1.0 / HTML / Markdown Engine"]
-        API --> SSE & Auth & Export
-    end
-
-    subgraph AsyncLayer["Asynchronous Task & Storage Topology"]
-        Celery["Celery Distributed Workers"]
-        Redis["Redis Queue Broker & Pub/Sub"]
-        Postgres[("PostgreSQL 16 Engine")]
-        Qdrant[("Qdrant Vector Database")]
-        SQLite[("SQLite WAL Fallback (Standalone)")]
-    end
-
-    subgraph EngineLayer["Core Analysis & ML Engines"]
-        AST["Polyglot AST Visitor (McCabe, Halstead)"]
-        ML["Random Forest Defect Classifier (v1.0.0)"]
-        SHAP["Local TreeSHAP Feature Attributor (&phi;i)"]
-        RAG["FastCodeEmbedder & Context Retriever"]
-        Tarjan["Tarjan SCC Dependency Analyzer"]
-    end
-
-    UI <===>|HTTP / EventStream| API
-    API <---> Celery
-    Celery <---> Redis
-    Celery <---> Postgres & Qdrant & SQLite
-    Celery --> EngineLayer
-```
-
----
-
-## 4. Empirical Academic Benchmarks (RQ1 &ndash; RQ3)
-
-The platform includes a ground-truth labeled benchmark suite evaluated against known defective code modules, benign test fixtures, and production repositories.
-
-### Research Results Overview
-
-```
-+---------------------------------------------------------------------------------------+
-|  RQ1: Triangulation Performance                                                       |
-|  Hybrid F1 = 1.000  vs  Static Alone = 0.800  (+25.0% F1 Improvement)                 |
-+---------------------------------------------------------------------------------------+
-|  RQ2: Effort-Aware Defect Concentration                                               |
-|  Recall@Top20%LOC = 80.0%  vs  Random Review = 20.0%  (4.0x Cost-Effectiveness)        |
-+---------------------------------------------------------------------------------------+
-|  RQ3: False-Positive Noise Suppression                                                |
-|  Benign Suppression = 100.0%  |  Critical CVE Retention = 100.0%                      |
-+---------------------------------------------------------------------------------------+
-```
-
-| Research Question | Scientific Hypothesis | Baseline Metric | Platform Result | Statistical Outcome |
-| :--- | :--- | :---: | :---: | :--- |
-| **RQ1: Multi-Engine Triangulation** | Synthesizing static AST alerts with TreeSHAP defect probabilities and RAG review outperforms standalone linters. | Static $F_1 = 0.800$<br/>LLM $F_1 = 0.800$ | **$F_1 = 1.000$** | **+$25.0\%$ gain** ($p < 0.01$). AST rules eliminate LLM hallucinations; semantic review filters false alarms. |
-| **RQ2: Effort-Aware Defect Concentration** | Prioritizing code files by TreeSHAP defect density captures $\ge 70\%$ of flaws within the top 20% of lines audited. | Random Review: $20.0\%$ | **$80.0\%$** | **$4.0\times$ multiplier**; developers inspect 80% fewer lines to capture 80% of all critical software bugs. |
-| **RQ3: Contextual False-Positive Filtering** | Semantic chunkers safely eliminate dummy secrets and test mocks without suppressing genuine production vulnerabilities. | Baseline: 0.0% suppressed | **$100.0\%$ FPSR** | **Zero Alert Fatigue**; 100% of benign fixture warnings suppressed while retaining 100% of genuine CVEs. |
-
----
-
-## 5. Mathematical Scoring Formulations
-
-### Composite Repository Quality Index (RQI)
-$$\text{RQI} = 0.30 \cdot S_{\text{maint}} + 0.30 \cdot S_{\text{sec}} + 0.20 \cdot S_{\text{arch}} + 0.20 \cdot S_{\text{test}}$$
-
-- **Maintainability Pillar ($S_{\text{maint}}$)**:
-  $$S_{\text{maint}} = \max\left(0, \min\left(100, \overline{\text{MI}} - P_{\text{CC}} - P_{\text{Cognitive}} - P_{\text{Halstead}}\right)\right)$$
-  Where $\text{MI} = 171 - 5.2 \ln(V) - 0.23(CC) - 16.2 \ln(\text{SLOC})$.
-
-- **Security Pillar ($S_{\text{sec}}$) with False-Positive Immunity**:
-  $$S_{\text{sec}} = \max\left(0, 100 - \sum_{j \in \mathcal{V}_{\text{validated}}} w_j\right)$$
-  *Security findings verified as test mocks by the hybrid reviewer carry zero penalty deduction.*
-
-- **Architecture & Coupling Pillar ($S_{\text{arch}}$)**:
-  $$S_{\text{arch}} = \max\left(0, 100 - 15 \cdot |\text{SCC}_{\text{circular}}| - P_{\text{coupling}} - 30 \cdot \overline{P(\text{defect})}\right)$$
-  Identifies strongly connected components via Tarjan's linear time depth-first algorithm: $\mathcal{O}(|V| + |E|)$.
-
-- **Testing Density Pillar ($S_{\text{test}}$)**:
-  $$S_{\text{test}} = \min\left(100, \max\left(20, 120 \cdot \frac{\text{TestLOC}}{\text{TotalLOC}} + 40 \cdot \frac{N_{\text{test\_files}}}{N_{\text{files}}}\right)\right)$$
-
-### Exact TreeSHAP Local Feature Attribution
-For each module feature $i$, the exact Shapley contribution $\phi_i(x)$ is computed across the feature subset space $F$:
-
-$$\phi_i(x) = \sum_{S \subseteq F \setminus \{i\}} \frac{|S|!(|F| - |S| - 1)!}{|F|!} \left[ f_x(S \cup \{i\}) - f_x(S) \right]$$
-
----
-
-## 6. Quickstart & Deployment Runbook
-
-CodeSentinel AI supports **Dual-Mode Execution**:
-1. **Local Standalone Mode**: Zero external infrastructure required. Runs instantly with SQLite WAL mode and in-memory vector stores.
-2. **Production Multi-Container Cluster**: Enterprise deployment orchestrated via Docker Compose.
-
-### Mode A: 1-Command Local Standalone Quickstart
-
-#### 1. Backend Gateway Setup
-```powershell
+#### 1. Backend
+```bash
 cd backend
+
+# Create and activate virtual environment
 python -m venv .venv
+source .venv/bin/activate    # On Windows: .\.venv\Scripts\activate
 
-# Windows:
-.\.venv\Scripts\activate
-# Linux / macOS:
-source .venv/bin/activate
-
+# Install dependencies
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 
-# Launch FastAPI Gateway on port 8000
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+# Start the FastAPI server
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-#### 2. Frontend Dashboard Setup
-```powershell
+#### 2. Frontend
+```bash
 cd frontend
+
 npm install
 npm run dev
 ```
@@ -205,93 +101,170 @@ Open **`http://localhost:5173`** in your browser.
 
 ---
 
-### Mode B: 1-Command Docker Compose Production Cluster
+## Architecture
 
-```powershell
-# Build and launch all 6 production services
-docker compose up -d --build
+```mermaid
+flowchart LR
+    subgraph Input["1. Ingestion"]
+        Repo["Git Repo / Local Code"]
+    end
+
+    subgraph Analysis["2. Analysis Engines"]
+        AST["AST Security Scanner<br/>(CWE-89, 78, 502, 798, 327)"]
+        Metrics["Code Metrics Engine<br/>(McCabe, Halstead, SLOC)"]
+        Tarjan["Architecture Engine<br/>(Tarjan's SCC for Cycles)"]
+        ML["ML Defect Engine<br/>(Random Forest + TreeSHAP)"]
+        Filter["Context Filter<br/>(Fixture & Mock Suppression)"]
+    end
+
+    subgraph Output["3. Output & Delivery"]
+        RQI["Quality Scorecard<br/>(0–100 RQI)"]
+        SARIF["SARIF v2.1.0<br/>(GitHub Code Scanning)"]
+        UI["Web Dashboard<br/>(React + Recharts Radar)"]
+        PR["PR Review Bot<br/>(Inline Diffs & Comments)"]
+    end
+
+    Repo --> AST & Metrics & Tarjan
+    Metrics --> ML
+    AST & ML --> Filter
+    Filter & Tarjan --> RQI
+    RQI --> SARIF & UI & PR
 ```
 
-#### Production Cluster Topology
-| Service Container | Image / Technology | Host Port | Role & Health Check |
-| :--- | :--- | :---: | :--- |
-| **`quality_frontend`** | Nginx Alpine (Vite SPA) | `5173`, `80` | Static asset serving & reverse proxy |
-| **`quality_backend`** | Python 3.12 Slim (FastAPI) | `8000` | REST API, SSE streaming, scoring engine |
-| **`quality_celery_worker`** | Python 3.12 Slim (Celery) | &mdash; | Asynchronous repository ingestion & TreeSHAP worker |
-| **`quality_postgres`** | PostgreSQL 16 Alpine | `5432` | Relational report, metric & finding persistence |
-| **`quality_redis`** | Redis 7 Alpine | `6379` | Queue broker, event pub/sub, caching |
-| **`quality_qdrant`** | Qdrant Vector DB v1.8.0 | `6333` | Code symbol embedding storage & similarity retrieval |
+### Component Summary
 
-Clean cluster teardown:
-```powershell
-docker compose down
-```
+| Component | Stack | Role |
+| :--- | :--- | :--- |
+| **API Gateway** | FastAPI, Pydantic v2 | REST endpoints, SSE event streams, security webhooks |
+| **Frontend** | React 18, TypeScript, Tailwind CSS, Vite | Live scorecard, 5-axis radar chart, PR diff viewer |
+| **Task Queue** | Celery, Redis | Background repository cloning, AST traversal, and ML scoring |
+| **Database** | PostgreSQL 16 / SQLite (WAL) | Scan history, file metrics, vulnerabilities, and quality scores |
+| **Vector Search** | Qdrant / Local In-Memory | Code chunk embeddings for semantic retrieval |
+| **ML Engine** | Scikit-Learn, TreeSHAP | Defect probability classification and feature attribution |
 
 ---
 
-## 7. REST API & Integration Reference
+## How Scoring Works
 
-### Interactive Documentation
-Interactive OpenAPI 3.1 Swagger docs are available at **`http://localhost:8000/docs`** (Redoc at `/redoc`).
+The **Repository Quality Index (RQI)** is a weighted score from **0 to 100** that reflects overall project health:
+
+$$\text{RQI} = 0.30 \cdot S_{\text{maintainability}} + 0.30 \cdot S_{\text{security}} + 0.20 \cdot S_{\text{architecture}} + 0.20 \cdot S_{\text{testing}}$$
+
+### The 4 Pillars
+
+- **Maintainability (30%)**: Calculated from the Maintainability Index ($\text{MI} = 171 - 5.2 \ln(V) - 0.23(CC) - 16.2 \ln(\text{SLOC})$) and penalized for high cyclomatic complexity ($CC > 15$) and excessive cognitive load.
+- **Security (30%)**: Starts at 100 and deducts points based on severity (Critical: -25, High: -15, Medium: -8, Low: -3). Benign test fixtures and mock credentials carry zero deduction.
+- **Architecture (20%)**: Evaluates module coupling and dependency health. Penalizes circular imports identified via Tarjan's SCC algorithm and elevated defect risk across core packages.
+- **Testing (20%)**: Measures test density (ratio of test code lines to production code lines) and test file presence across directories.
+
+---
+
+## Benchmarks & Evaluation
+
+We evaluated CodeSentinel against synthetic defect fixtures and open-source benchmark repositories across three research questions:
+
+| Evaluation Area | What Was Evaluated | Baseline | CodeSentinel | Practical Takeaway |
+| :--- | :--- | :---: | :---: | :--- |
+| **Hybrid Triangulation (RQ1)** | Can combining static AST alerts with ML risk scores and semantic review outperform static analysis alone? | Static alone: $F_1 = 0.800$ | **$F_1 = 1.000$** | AST rules catch hard security flaws; semantic context filters false alarms. |
+| **Effort-Aware Review (RQ2)** | Does prioritizing files by predicted defect risk help reviewers find bugs faster? | 20.0% (Random review) | **80.0%** (Top 20% LOC) | Auditing the top 20% riskiest lines catches 80% of identified defects ($4.0\times$ efficiency). |
+| **Noise Suppression (RQ3)** | Does the platform reliably ignore test fixtures, unit mocks, and dummy credentials? | 0.0% suppressed (Standard linters) | **100.0%** suppressed | Benign test data is suppressed without missing genuine production CVEs. |
+
+To run the benchmark suite locally:
+```bash
+cd backend
+pytest tests/test_benchmarks.py -v
+```
+
+You can also view the interactive benchmark charts in the frontend dashboard under the **Academic Benchmarks** tab.
+
+---
+
+## API Usage
+
+The FastAPI backend provides an interactive OpenAPI reference at `/docs` (and `/redoc`).
 
 ```bash
-# 1. Check Service Health
+# 1. Health check
 curl -s http://localhost:8000/api/v1/health
 
-# 2. Onboard Repository
+# 2. Onboard a repository
 curl -X POST http://localhost:8000/api/v1/repositories/onboard \
   -H "Content-Type: application/json" \
   -d '{"url": "https://github.com/fastapi/fastapi", "default_branch": "master"}'
 
-# 3. Trigger Analysis Pipeline
+# 3. Trigger an analysis scan
 curl -X POST http://localhost:8000/api/v1/analysis/trigger \
   -H "Content-Type: application/json" \
   -d '{"repository_id": "<REPO_ID>", "branch": "master"}'
 
-# 4. Stream Real-Time Pipeline Progress (SSE)
+# 4. Stream real-time progress via Server-Sent Events (SSE)
 curl -N http://localhost:8000/api/v1/events/sse/jobs/<JOB_ID>
 
-# 5. Export OASIS SARIF v2.1.0 Log
-curl -s http://localhost:8000/api/v1/reports/<REPORT_ID>/export/sarif
-
-# 6. Execute Academic Benchmark Experiments (RQ1-RQ3)
-curl -s http://localhost:8000/api/v1/benchmarks/experiments
+# 5. Export an OASIS SARIF v2.1.0 report
+curl -s http://localhost:8000/api/v1/reports/<REPORT_ID>/export/sarif -o report.sarif
 ```
 
 ---
 
-## 8. Verification & Test Suite
+## Project Structure
 
-The entire platform is backed by automated tests across static types, linting rules, and integration suites:
+```
+.
+├── backend/                  # FastAPI service and analysis pipeline
+│   ├── app/
+│   │   ├── api/v1/           # API endpoints (health, repos, analysis, reports, benchmarks)
+│   │   ├── core/             # App config, database session, sandbox limits
+│   │   ├── domain/           # SQLAlchemy models and Pydantic schemas
+│   │   ├── services/         # AST parser, static analyzer, scoring engine, SARIF exporter
+│   │   └── workers/          # Celery async background tasks
+│   └── tests/                # Automated pytest test suite (61 tests)
+├── frontend/                 # React 18 + Vite + TypeScript dashboard
+│   ├── src/
+│   │   ├── components/       # Radar chart, file heatmap, diff viewer, benchmark modal
+│   │   ├── hooks/            # TanStack Query hooks & SSE listeners
+│   │   └── pages/            # Scanner dashboard, live scorecard, review views
+├── ml_engine/                # Defect risk classifier & explainability
+│   ├── models/               # Trained Random Forest model
+│   ├── extractors/           # Software metric extraction (McCabe, Halstead)
+│   └── explainers/           # TreeSHAP feature importance attribution
+├── docker-compose.yml        # 6-service Docker Compose configuration
+└── README.md
+```
 
-```powershell
-# 1. Backend Linting & MyPy Static Typing
+---
+
+## Running Tests & Checks
+
+```bash
+# Backend test suite (61 tests)
 cd backend
-ruff check app ../ml_engine        # 0 lint errors
-mypy app                           # 0 type errors across 74 files
+pytest -v
 
-# 2. Backend Automated Test Suite (61 tests)
-pytest -v                          # 61 passed in 15s
+# Code style and static type checking
+ruff check app ../ml_engine
+mypy app
 
-# 3. Frontend Types & Unit Tests
-cd ..\frontend
-npm run typecheck                  # 0 TypeScript errors
-npm run test:run                   # Vitest tests passed (2/2)
-npm run build                      # Production bundle builds in <7s
+# Frontend type checking and unit tests
+cd ../frontend
+npm run typecheck
+npm run test:run
 ```
 
 ---
 
-## 9. Security & Sandboxing Architecture
+## Contributing
 
-- **SSRF Protection**: Repository URLs are validated against private IP blocks (`127.0.0.0/8`, `10.0.0.0/8`, `192.168.0.0/16`, AWS metadata `169.254.169.254`).
-- **Subprocess Isolation**: Cloning timeouts and repository size limits (250MB) are strictly enforced in isolated scratch volumes.
-- **Webhook Authenticity**: Constant-time HMAC SHA-256 verification prevents timing attacks on GitHub webhook delivery.
-- **Non-Root Runtime**: Container images execute under unprivileged user accounts (`appuser:10001`).
+Contributions, feedback, and issue reports are welcome. Please feel free to open an issue or submit a pull request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feat/my-feature`)
+3. Run tests (`pytest && npm run test:run`)
+4. Commit your changes (`git commit -m 'feat: add my feature'`)
+5. Push to the branch (`git push origin feat/my-feature`)
+6. Open a Pull Request
 
 ---
 
-## 10. License & Contributing
+## License
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for full legal text.
-Contributions and peer-review research evaluations are welcome &mdash; please open an issue or pull request.
+Distributed under the [MIT License](LICENSE).
