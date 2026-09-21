@@ -4,7 +4,7 @@
 
 **A modern code quality and security analysis platform combining static AST checks, ML defect risk prediction, and PR review.**
 
-[![Tests](https://img.shields.io/badge/tests-61%20passed-2ea44f?style=flat-square)](https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform)
+[![Tests](https://img.shields.io/badge/tests-61%20passed-2ea44f?style=flat-square)](https://github.com/farazrasul0-cmd/CodeSentinel-AI)
 [![Python](https://img.shields.io/badge/python-3.12-387baf?style=flat-square)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=flat-square)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/react-18-61dafb?style=flat-square&logo=react&logoColor=black)](https://react.dev)
@@ -51,8 +51,8 @@ Static analysis tools often flood engineering teams with hundreds of low-priorit
 Clone the repository and spin up all services:
 
 ```bash
-git clone https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform.git
-cd AI-Powered-Software-Quality-Analysis-Platform
+git clone https://github.com/farazrasul0-cmd/CodeSentinel-AI.git
+cd CodeSentinel-AI
 
 docker compose up -d --build
 ```

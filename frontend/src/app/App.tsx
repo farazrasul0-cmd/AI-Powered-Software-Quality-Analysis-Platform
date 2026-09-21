@@ -123,7 +123,7 @@ export const App: React.FC = () => {
 
             {/* GitHub External Link */}
             <a
-              href="https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform"
+              href="https://github.com/farazrasul0-cmd/CodeSentinel-AI"
               target="_blank"
               rel="noreferrer"
               className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition-all flex items-center gap-1.5"
@@ -221,7 +221,7 @@ export const App: React.FC = () => {
             {/* Right Links */}
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium">
               <a
-                href="https://github.com/farazrasul0-cmd/AI-Powered-Software-Quality-Analysis-Platform"
+                href="https://github.com/farazrasul0-cmd/CodeSentinel-AI"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 text-gray-400 hover:text-white transition"

@@ -239,7 +239,7 @@ class ExportService:
         lines.extend([
             "",
             "---",
-            "*Report generated automatically by [CodeSentinel AI](https://github.com/farazrasul0-cmd/CodeSentinel).* "
+            "*Report generated automatically by [CodeSentinel AI](https://github.com/farazrasul0-cmd/CodeSentinel-AI).* "
             "Ingest SARIF log for detailed GitHub Code Scanning annotations.",
         ])
 
