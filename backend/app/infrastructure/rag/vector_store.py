@@ -53,8 +53,8 @@ class FastCodeEmbedder:
             tok_lower = token.lower()
             # Positional decay
             pos_weight = 1.0 / math.sqrt(idx + 1)
-            # Hash to dimension slot
-            h = int(hashlib.md5(tok_lower.encode("utf-8")).hexdigest(), 16)
+            # Hash to dimension slot using collision-resistant SHA-256
+            h = int(hashlib.sha256(tok_lower.encode("utf-8")).hexdigest(), 16)
             slot = h % cls.DIMENSION
             sign = 1.0 if (h >> 8) & 1 else -1.0
             vec[slot] += sign * pos_weight
@@ -197,7 +197,8 @@ class QdrantVectorStore(VectorStore):
 
     async def _is_healthy(self) -> bool:
         """Verifies if Qdrant service is reachable with caching."""
-        import socket, time
+        import socket
+        import time
         now = time.time()
         if self._health_cache is not None and (now - self._health_cache_time) < 30.0:
             return self._health_cache

@@ -77,3 +77,32 @@ def test_relative_import_resolution():
         assert len(graph.circular_dependencies) == 0
         internal_edges = [e for e in graph.edges if e.is_internal]
         assert len(internal_edges) >= 1
+
+
+def test_type_checking_guarded_imports_ignored():
+    """Confirms that imports inside `if TYPE_CHECKING:` blocks do not generate runtime circular edges."""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+
+        # File A: imports B at runtime
+        file_a = root / "model_a.py"
+        file_a.write_text(
+            "from model_b import ModelB\nclass ModelA:\n    pass\n",
+            encoding="utf-8",
+        )
+
+        # File B: imports A ONLY inside `if TYPE_CHECKING:`
+        file_b = root / "model_b.py"
+        file_b.write_text(
+            "from typing import TYPE_CHECKING\n"
+            "if TYPE_CHECKING:\n"
+            "    from model_a import ModelA\n"
+            "class ModelB:\n"
+            "    pass\n",
+            encoding="utf-8",
+        )
+
+        graph = DependencyGraphBuilder.build_graph(root, [file_a, file_b])
+        # Crucial check: 0 cycles detected!
+        assert len(graph.circular_dependencies) == 0
+

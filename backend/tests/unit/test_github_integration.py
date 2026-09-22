@@ -9,25 +9,28 @@ from app.infrastructure.github.pr_commenter import MockGitHubPRClient
 from app.infrastructure.github.webhook_handler import GitHubWebhookHandler
 
 
+import secrets
+
+
 def test_webhook_signature_verification_success():
-    secret = "super-secret-token-key"
-    handler = GitHubWebhookHandler(secret=secret)
+    test_secret = secrets.token_hex(32)
+    handler = GitHubWebhookHandler(secret=test_secret)
     body = b'{"action": "opened", "pull_request": {"number": 42}}'
 
     # Compute genuine signature
-    expected_hash = hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    expected_hash = hmac.new(test_secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     valid_header = f"sha256={expected_hash}"
 
     assert handler.verify_signature(body, valid_header) is True
 
 
 def test_webhook_signature_verification_failure_tampered():
-    secret = "super-secret-token-key"
-    handler = GitHubWebhookHandler(secret=secret)
+    test_secret = secrets.token_hex(32)
+    handler = GitHubWebhookHandler(secret=test_secret)
     body = b'{"action": "opened", "pull_request": {"number": 42}}'
     tampered_body = b'{"action": "opened", "pull_request": {"number": 999}}'
 
-    expected_hash = hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
+    expected_hash = hmac.new(test_secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
     valid_header = f"sha256={expected_hash}"
 
     assert handler.verify_signature(tampered_body, valid_header) is False

@@ -18,7 +18,9 @@ class EventBroadcaster:
 
     @classmethod
     def _is_redis_online(cls) -> bool:
-        import socket, time
+        import socket
+        import time
+
         from app.core.config import settings
         now = time.time()
         if cls._redis_online is not None and (now - cls._redis_check_time) < 30.0:

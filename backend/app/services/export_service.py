@@ -20,156 +20,32 @@ from app.api.v1.schemas.export import (
 )
 from app.domain.enums import CommentStatus, FindingSeverity
 from app.infrastructure.db.models.analysis_report import AnalysisReport
+from app.infrastructure.db.models.defect_prediction import DefectPrediction
+from app.infrastructure.db.models.issue import Issue
+from app.infrastructure.db.models.review_comment import ReviewComment
 from app.services.scoring_service import QualityScorecard, ScoringService
 
 
-class ExportService:
-    """Standardized report export service conforming to SARIF v2.1.0 and print standards."""
+class SarifExporter:
+    """Builder for OASIS SARIF v2.1.0 log files."""
 
-    @staticmethod
-    def generate_sarif(
-        report: AnalysisReport,
-        scorecard: QualityScorecard | None = None,
-    ) -> SarifLog:
+    @classmethod
+    def export(cls, report: AnalysisReport, scorecard: QualityScorecard | None = None) -> SarifLog:
         """Serializes static findings, ML predictions, and review suggestions into OASIS SARIF v2.1.0."""
         rules_map: dict[str, SarifReportingDescriptor] = {}
         results: list[SarifResult] = []
 
         # 1. Map Static Analysis Issues
         for issue in report.issues:
-            rule_id = issue.rule_id or f"RULE-{issue.category}"
-            if rule_id not in rules_map:
-                rules_map[rule_id] = SarifReportingDescriptor(
-                    id=rule_id,
-                    name=issue.title,
-                    shortDescription=SarifMessage(text=issue.title),
-                    fullDescription=SarifMessage(text=issue.description or issue.title),
-                    helpUri=f"https://cwe.mitre.org/data/definitions/{issue.cwe_id.replace('CWE-', '')}.html"
-                    if issue.cwe_id
-                    else None,
-                    defaultConfiguration={
-                        "level": "error"
-                        if issue.severity in (FindingSeverity.CRITICAL, FindingSeverity.HIGH)
-                        else "warning"
-                    },
-                )
-
-            level = "error" if issue.severity in (FindingSeverity.CRITICAL, FindingSeverity.HIGH) else (
-                "warning" if issue.severity == FindingSeverity.MEDIUM else "note"
-            )
-
-            results.append(
-                SarifResult(
-                    ruleId=rule_id,
-                    level=level,  # type: ignore[arg-type]
-                    message=SarifMessage(text=f"[{issue.severity}] {issue.title}: {issue.description}"),
-                    locations=[
-                        SarifLocation(
-                            physicalLocation=SarifPhysicalLocation(
-                                artifactLocation=SarifArtifactLocation(uri=issue.file_path),
-                                region=SarifRegion(
-                                    startLine=max(1, issue.line_start),
-                                    endLine=max(issue.line_start, issue.line_end),
-                                ),
-                            )
-                        )
-                    ],
-                )
-            )
+            cls._map_issue(issue, rules_map, results)
 
         # 2. Map ML Defect Predictions (High and Critical risk tiers)
         for dp in report.defect_predictions:
-            prob = float(dp.defect_probability or 0.0)
-            tier = str(dp.risk_tier)
-            if tier in ("CRITICAL", "HIGH") or prob >= 0.65:
-                rule_id = "ML-DEFECT-PROBABILITY-HIGH"
-                if rule_id not in rules_map:
-                    rules_map[rule_id] = SarifReportingDescriptor(
-                        id=rule_id,
-                        name="High Defect Probability",
-                        shortDescription=SarifMessage(text="High Defect Probability Predicted by ML"),
-                        fullDescription=SarifMessage(
-                            text="The module has high complexity and change churn, indicating high likelihood of containing software defects."
-                        ),
-                        defaultConfiguration={"level": "warning"},
-                    )
-
-                results.append(
-                    SarifResult(
-                        ruleId=rule_id,
-                        level="error" if tier == "CRITICAL" else "warning",
-                        message=SarifMessage(
-                            text=f"TreeSHAP Defect Predictor: {prob:.0%} defect probability (Risk Tier: {tier})."
-                        ),
-                        locations=[
-                            SarifLocation(
-                                physicalLocation=SarifPhysicalLocation(
-                                    artifactLocation=SarifArtifactLocation(uri=dp.file_path),
-                                    region=SarifRegion(startLine=1, endLine=1),
-                                )
-                            )
-                        ],
-                    )
-                )
+            cls._map_defect_prediction(dp, rules_map, results)
 
         # 3. Map Confirmed Hybrid AI Review Comments & Suggested Patches
         for rev in report.review_comments or []:
-            if rev.status == CommentStatus.DISMISSED or "FALSE_POSITIVE" in (rev.comment or ""):
-                continue
-
-            rule_id = "AI-HYBRID-CODE-REVIEW"
-            if rule_id not in rules_map:
-                rules_map[rule_id] = SarifReportingDescriptor(
-                    id=rule_id,
-                    name="AI Code Review Finding",
-                    shortDescription=SarifMessage(text="Triangulated AI Code Review Finding"),
-                    fullDescription=SarifMessage(
-                        text="Identified by hybrid AST, ML risk, and LLM semantic triangulation."
-                    ),
-                    defaultConfiguration={"level": "warning"},
-                )
-
-            fixes = None
-            if rev.suggested_patch:
-                fixes = [
-                    SarifFix(
-                        description=SarifMessage(text="Suggested code patch from hybrid review"),
-                        artifactChanges=[
-                            SarifArtifactChange(
-                                artifactLocation=SarifArtifactLocation(uri=rev.file_path),
-                                replacements=[
-                                    SarifReplacement(
-                                        deletedRegion=SarifRegion(
-                                            startLine=max(1, rev.line_number),
-                                            endLine=max(1, rev.line_number),
-                                        ),
-                                        insertedContent=SarifMessage(text=rev.suggested_patch),
-                                    )
-                                ],
-                            )
-                        ],
-                    )
-                ]
-
-            results.append(
-                SarifResult(
-                    ruleId=rule_id,
-                    level="warning",
-                    message=SarifMessage(text=rev.comment[:500]),
-                    locations=[
-                        SarifLocation(
-                            physicalLocation=SarifPhysicalLocation(
-                                artifactLocation=SarifArtifactLocation(uri=rev.file_path),
-                                region=SarifRegion(
-                                    startLine=max(1, rev.line_number),
-                                    endLine=max(1, rev.line_number),
-                                ),
-                            )
-                        )
-                    ],
-                    fixes=fixes,
-                )
-            )
+            cls._map_review_comment(rev, rules_map, results)
 
         tool = SarifTool(
             driver=SarifToolComponent(
@@ -182,12 +58,168 @@ class ExportService:
         return SarifLog(runs=[SarifRun(tool=tool, results=results)])
 
     @staticmethod
-    def generate_markdown_summary(
+    def _map_issue(
+        issue: Issue,
+        rules_map: dict[str, SarifReportingDescriptor],
+        results: list[SarifResult],
+    ) -> None:
+        rule_id = issue.rule_id or f"RULE-{issue.category}"
+        if rule_id not in rules_map:
+            rules_map[rule_id] = SarifReportingDescriptor(
+                id=rule_id,
+                name=issue.title,
+                shortDescription=SarifMessage(text=issue.title),
+                fullDescription=SarifMessage(text=issue.description or issue.title),
+                helpUri=f"https://cwe.mitre.org/data/definitions/{issue.cwe_id.replace('CWE-', '')}.html"
+                if issue.cwe_id
+                else None,
+                defaultConfiguration={
+                    "level": "error"
+                    if issue.severity in (FindingSeverity.CRITICAL, FindingSeverity.HIGH)
+                    else "warning"
+                },
+            )
+
+        level = (
+            "error"
+            if issue.severity in (FindingSeverity.CRITICAL, FindingSeverity.HIGH)
+            else ("warning" if issue.severity == FindingSeverity.MEDIUM else "note")
+        )
+
+        results.append(
+            SarifResult(
+                ruleId=rule_id,
+                level=level,  # type: ignore[arg-type]
+                message=SarifMessage(text=f"[{issue.severity}] {issue.title}: {issue.description}"),
+                locations=[
+                    SarifLocation(
+                        physicalLocation=SarifPhysicalLocation(
+                            artifactLocation=SarifArtifactLocation(uri=issue.file_path),
+                            region=SarifRegion(
+                                startLine=max(1, issue.line_start),
+                                endLine=max(issue.line_start, issue.line_end),
+                            ),
+                        )
+                    )
+                ],
+            )
+        )
+
+    @staticmethod
+    def _map_defect_prediction(
+        dp: DefectPrediction,
+        rules_map: dict[str, SarifReportingDescriptor],
+        results: list[SarifResult],
+    ) -> None:
+        prob = float(dp.defect_probability or 0.0)
+        tier = str(dp.risk_tier)
+        if tier not in ("CRITICAL", "HIGH") and prob < 0.65:
+            return
+
+        rule_id = "ML-DEFECT-PROBABILITY-HIGH"
+        if rule_id not in rules_map:
+            rules_map[rule_id] = SarifReportingDescriptor(
+                id=rule_id,
+                name="High Defect Probability",
+                shortDescription=SarifMessage(text="High Defect Probability Predicted by ML"),
+                fullDescription=SarifMessage(
+                    text="The module has high complexity and change churn, indicating high likelihood of containing software defects."
+                ),
+                defaultConfiguration={"level": "warning"},
+            )
+
+        results.append(
+            SarifResult(
+                ruleId=rule_id,
+                level="error" if tier == "CRITICAL" else "warning",
+                message=SarifMessage(
+                    text=f"TreeSHAP Defect Predictor: {prob:.0%} defect probability (Risk Tier: {tier})."
+                ),
+                locations=[
+                    SarifLocation(
+                        physicalLocation=SarifPhysicalLocation(
+                            artifactLocation=SarifArtifactLocation(uri=dp.file_path),
+                            region=SarifRegion(startLine=1, endLine=1),
+                        )
+                    )
+                ],
+            )
+        )
+
+    @staticmethod
+    def _map_review_comment(
+        rev: ReviewComment,
+        rules_map: dict[str, SarifReportingDescriptor],
+        results: list[SarifResult],
+    ) -> None:
+        if rev.status == CommentStatus.DISMISSED or "FALSE_POSITIVE" in (rev.comment or ""):
+            return
+
+        rule_id = "AI-HYBRID-CODE-REVIEW"
+        if rule_id not in rules_map:
+            rules_map[rule_id] = SarifReportingDescriptor(
+                id=rule_id,
+                name="AI Code Review Finding",
+                shortDescription=SarifMessage(text="Triangulated AI Code Review Finding"),
+                fullDescription=SarifMessage(
+                    text="Identified by hybrid AST, ML risk, and LLM semantic triangulation."
+                ),
+                defaultConfiguration={"level": "warning"},
+            )
+
+        fixes = None
+        if rev.suggested_patch:
+            fixes = [
+                SarifFix(
+                    description=SarifMessage(text="Suggested code patch from hybrid review"),
+                    artifactChanges=[
+                        SarifArtifactChange(
+                            artifactLocation=SarifArtifactLocation(uri=rev.file_path),
+                            replacements=[
+                                SarifReplacement(
+                                    deletedRegion=SarifRegion(
+                                        startLine=max(1, rev.line_number),
+                                        endLine=max(1, rev.line_number),
+                                    ),
+                                    insertedContent=SarifMessage(text=rev.suggested_patch),
+                                )
+                            ],
+                        )
+                    ],
+                )
+            ]
+
+        results.append(
+            SarifResult(
+                ruleId=rule_id,
+                level="warning",
+                message=SarifMessage(text=rev.comment[:500]),
+                locations=[
+                    SarifLocation(
+                        physicalLocation=SarifPhysicalLocation(
+                            artifactLocation=SarifArtifactLocation(uri=rev.file_path),
+                            region=SarifRegion(
+                                startLine=max(1, rev.line_number),
+                                endLine=max(1, rev.line_number),
+                            ),
+                        )
+                    )
+                ],
+                fixes=fixes,
+            )
+        )
+
+
+class MarkdownSummaryExporter:
+    """Builder for GitHub PR Markdown summaries."""
+
+    @classmethod
+    def export(
+        cls,
         report: AnalysisReport,
         scorecard: QualityScorecard | None = None,
         repo_name: str = "Repository",
     ) -> str:
-        """Produces a structured GitHub PR review comment in standard markdown."""
         sc = scorecard or ScoringService.calculate_scores(
             file_metrics=report.file_metrics,
             issues=report.issues,
@@ -245,13 +277,17 @@ class ExportService:
 
         return "\n".join(lines)
 
-    @staticmethod
-    def generate_printable_html(
+
+class HtmlReportExporter:
+    """Builder for standalone printable executive HTML reports."""
+
+    @classmethod
+    def export(
+        cls,
         report: AnalysisReport,
         scorecard: QualityScorecard | None = None,
         repo_name: str = "Repository",
     ) -> str:
-        """Generates self-contained, standalone printable HTML executive report (Standard Library First)."""
         sc = scorecard or ScoringService.calculate_scores(
             file_metrics=report.file_metrics,
             issues=report.issues,
@@ -263,9 +299,8 @@ class ExportService:
         grade = html.escape(sc.grade)
         overall = sc.overall_score
 
-        pillars_html = ""
-        for p in sc.pillars:
-            pillars_html += f"""
+        pillars_html = "".join(
+            f"""
             <div class="card">
                 <div class="card-header">
                     <span class="pillar-title">{html.escape(p['name'])}</span>
@@ -276,16 +311,19 @@ class ExportService:
                 <div class="summary-text">{html.escape(p['summary'])}</div>
             </div>
             """
+            for p in sc.pillars
+        )
 
-        recs_html = ""
-        for r in sc.recommendations:
-            recs_html += f"""
+        recs_html = "".join(
+            f"""
             <div class="rec-card">
                 <div class="rec-badge">Rank #{r['rank']} &bull; +{r['potential_score_impact']} pts &bull; ~{r['effort_minutes']}m effort</div>
                 <div class="rec-title">{html.escape(r['title'])}</div>
                 <div class="rec-desc">{html.escape(r['description'])}</div>
             </div>
             """
+            for r in sc.recommendations
+        )
 
         return f"""<!DOCTYPE html>
 <html lang="en">
@@ -372,3 +410,33 @@ class ExportService:
 </body>
 </html>
 """
+
+
+class ExportService:
+    """Standardized report export facade conforming to SARIF v2.1.0 and print standards."""
+
+    @staticmethod
+    def generate_sarif(
+        report: AnalysisReport,
+        scorecard: QualityScorecard | None = None,
+    ) -> SarifLog:
+        """Serializes static findings, ML predictions, and review suggestions into OASIS SARIF v2.1.0."""
+        return SarifExporter.export(report, scorecard)
+
+    @staticmethod
+    def generate_markdown_summary(
+        report: AnalysisReport,
+        scorecard: QualityScorecard | None = None,
+        repo_name: str = "Repository",
+    ) -> str:
+        """Produces a structured GitHub PR review comment in standard markdown."""
+        return MarkdownSummaryExporter.export(report, scorecard, repo_name)
+
+    @staticmethod
+    def generate_printable_html(
+        report: AnalysisReport,
+        scorecard: QualityScorecard | None = None,
+        repo_name: str = "Repository",
+    ) -> str:
+        """Generates self-contained, standalone printable HTML executive report."""
+        return HtmlReportExporter.export(report, scorecard, repo_name)

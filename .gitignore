@@ -45,6 +45,8 @@ backend/.ruff_cache/
 # Databases, vectors, persistent data & scratch
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 quality_platform.db
 standalone_dev.db
 qdrant_storage/

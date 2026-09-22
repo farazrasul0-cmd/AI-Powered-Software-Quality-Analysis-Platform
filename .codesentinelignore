@@ -1,0 +1,8 @@
+# CodeSentinel Ignore Configuration
+# Deliberate test fixtures and temporary files to ignore during repository quality scans
+
+fixtures/static_samples/
+backend/temp_repos/
+temp_repos/
+*.min.js
+*.min.css
