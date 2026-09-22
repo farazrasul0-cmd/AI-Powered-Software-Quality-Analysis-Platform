@@ -146,8 +146,16 @@ class ScoringService:
         p_circular = 15.0 * num_cycles
 
         # High coupling modules (high fan-in/fan-out or method bloat)
+        # Pure DTO / schema definition modules and __init__.py are excluded from class-bloat heuristics
+        def _is_schema_or_dto(path: str) -> bool:
+            p = path.replace("\\", "/").lower()
+            return p.endswith("__init__.py") or "/schemas/" in p or "/dto/" in p or "/types/" in p
+
         high_coupling_count = sum(
-            1 for m in file_metrics if ((m.function_count or 0) > 20 or (m.class_count or 0) > 6)
+            1
+            for m in file_metrics
+            if not _is_schema_or_dto(m.file_path)
+            and ((m.function_count or 0) > 20 or (m.class_count or 0) > 6)
         )
         p_coupling = min(25.0, 3.0 * high_coupling_count)
 
