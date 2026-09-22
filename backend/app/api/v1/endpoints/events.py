@@ -40,27 +40,37 @@ async def stream_job_events(
         if job.status.value in {"COMPLETED", "FAILED", "CANCELLED"}:
             return
 
-        # Listen to Redis PubSub or poll database fallback
+        # Listen to Redis PubSub if online, or poll database fallback
         try:
+            if not EventBroadcaster._is_redis_online():
+                raise ConnectionError("Redis is offline")
             async for event_chunk in EventBroadcaster.subscribe_events(job_id):
                 yield event_chunk
         except Exception:
             # Fallback polling generator if Redis is not active
+            from app.infrastructure.db.session import async_session_factory
+            last_progress = -1.0
+            last_stage = ""
             while True:
-                await asyncio.sleep(2.0)
-                current = await job_repo.get_by_id(job_id)
-                if not current:
-                    break
-                poll_payload = {
-                    "job_id": current.id,
-                    "stage": current.current_stage,
-                    "progress": current.progress_percent,
-                    "message": f"Status: {current.status.value}",
-                    "data": {},
-                }
-                yield f"data: {json.dumps(poll_payload)}\n\n"
-                if current.status.value in {"COMPLETED", "FAILED", "CANCELLED"}:
-                    break
+                await asyncio.sleep(0.5)
+                async with async_session_factory() as poll_session:
+                    poll_repo = AnalysisJobRepo(poll_session)
+                    current = await poll_repo.get_by_id(job_id)
+                    if not current:
+                        break
+                    if current.progress_percent != last_progress or current.current_stage != last_stage or current.status.value in {"COMPLETED", "FAILED", "CANCELLED"}:
+                        last_progress = current.progress_percent
+                        last_stage = current.current_stage
+                        poll_payload = {
+                            "job_id": current.id,
+                            "stage": current.current_stage,
+                            "progress": current.progress_percent,
+                            "message": f"Phase: {current.current_stage} ({current.progress_percent:.0f}%)",
+                            "data": {},
+                        }
+                        yield f"data: {json.dumps(poll_payload)}\n\n"
+                    if current.status.value in {"COMPLETED", "FAILED", "CANCELLED"}:
+                        break
 
     return StreamingResponse(
         event_generator(),

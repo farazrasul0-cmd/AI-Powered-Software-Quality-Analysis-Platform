@@ -152,7 +152,22 @@ class IngestionService:
                 job, JobStatus.AI_REVIEW, "AI_REVIEW", 75.0, "Synthesizing AI code reviews..."
             )
             review_comments: list[ReviewComment] = []
+            # Prioritize files with detected static issues or elevated defect probability
+            issue_files = {iss.file_path for iss in issues}
+            high_risk_files = {dp.file_path for dp in defect_predictions if dp.defect_probability >= 0.35}
+            priority_files: list[Path] = []
+            code_files: list[Path] = []
+
             for f_path in indexed_files:
+                rel = str(f_path.relative_to(clone_path)).replace("\\", "/")
+                if rel in issue_files or rel in high_risk_files:
+                    priority_files.append(f_path)
+                elif f_path.suffix in {".py", ".ts", ".js", ".tsx", ".jsx"}:
+                    code_files.append(f_path)
+
+            target_review_files = (priority_files + code_files)[:25]
+
+            for f_path in target_review_files:
                 rel_path = str(f_path.relative_to(clone_path)).replace("\\", "/")
                 try:
                     content = f_path.read_text(encoding="utf-8", errors="ignore")
@@ -246,5 +261,5 @@ class IngestionService:
         job.progress_percent = progress
         if error_message:
             job.error_message = error_message
-        await self.session.flush()
+        await self.session.commit()
         await EventBroadcaster.publish_event(job.id, stage, progress, message)

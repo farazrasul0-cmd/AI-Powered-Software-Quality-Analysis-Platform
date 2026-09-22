@@ -192,16 +192,24 @@ class QdrantVectorStore(VectorStore):
         self.collection = collection
         self.base_url = f"http://{host}:{port}"
         self.fallback = InMemoryVectorStore()
+        self._health_cache: bool | None = None
+        self._health_cache_time: float = 0.0
 
     async def _is_healthy(self) -> bool:
-        """Verifies if Qdrant service is reachable."""
-        import httpx
+        """Verifies if Qdrant service is reachable with caching."""
+        import socket, time
+        now = time.time()
+        if self._health_cache is not None and (now - self._health_cache_time) < 30.0:
+            return self._health_cache
 
         try:
-            async with httpx.AsyncClient(timeout=1.5) as client:
-                res = await client.get(f"{self.base_url}/healthz")
-                return res.status_code == 200
-        except Exception:
+            with socket.create_connection((self.host, self.port), timeout=0.1):
+                self._health_cache = True
+                self._health_cache_time = now
+                return True
+        except OSError:
+            self._health_cache = False
+            self._health_cache_time = now
             return False
 
     async def index_chunks(self, repository_id: str, chunks: list[CodeChunk]) -> int:

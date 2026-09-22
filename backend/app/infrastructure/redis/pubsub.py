@@ -9,9 +9,29 @@ from app.infrastructure.redis.client import get_redis_client
 
 
 class EventBroadcaster:
+    _redis_online: bool | None = None
+    _redis_check_time: float = 0.0
+
     @staticmethod
     def get_channel_name(job_id: str) -> str:
         return f"job_events:{job_id}"
+
+    @classmethod
+    def _is_redis_online(cls) -> bool:
+        import socket, time
+        from app.core.config import settings
+        now = time.time()
+        if cls._redis_online is not None and (now - cls._redis_check_time) < 30.0:
+            return cls._redis_online
+        try:
+            with socket.create_connection((settings.REDIS_HOST, settings.REDIS_PORT), timeout=0.1):
+                cls._redis_online = True
+                cls._redis_check_time = now
+                return True
+        except OSError:
+            cls._redis_online = False
+            cls._redis_check_time = now
+            return False
 
     @classmethod
     async def publish_event(
@@ -22,6 +42,9 @@ class EventBroadcaster:
         message: str,
         data: dict[str, Any] | None = None,
     ) -> None:
+        if not cls._is_redis_online():
+            return
+
         payload = {
             "job_id": job_id,
             "stage": stage,
